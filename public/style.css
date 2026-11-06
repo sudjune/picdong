@@ -7,11 +7,11 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: #fafafa;
-  color: #333;
+  color: #222;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* 상단바 모바일 최적화 */
+/* 상단바 모바일 최적화 및 로고 고정 */
 .header {
   display: flex;
   justify-content: space-between;
@@ -22,25 +22,41 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  flex-wrap: wrap; /* 모바일에서 넘치면 자연스럽게 줄바꿈 */
   gap: 8px;
 }
 
-.logo {
-  font-size: 18px;
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* 거대해지던 pageicon 크기 원천 고정 */
+.brand-logo {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.brand-name {
+  font-size: 17px;
   font-weight: 800;
-  white-space: nowrap;
+  letter-spacing: -0.5px;
 }
 
 .nav-buttons {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap; /* 버튼들이 세로로 찌그러지지 않게 방지 */
+  flex-wrap: nowrap;
 }
 
 .btn {
-  padding: 6px 10px;
+  padding: 6px 9px;
   border: none;
   border-radius: 6px;
   font-size: 12px;
@@ -50,15 +66,16 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: opacity 0.2s;
 }
 
 .btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .btn-primary {
-  background-color: #111;
+  background-color: #000;
   color: #fff;
 }
 
@@ -67,23 +84,26 @@ body {
   color: #333;
 }
 
+/* 모바일 상단 닉네임 뱃지 찌그러짐 방지 */
 .user-info {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   background-color: #eef4ff;
   color: #2b6cb0;
-  padding: 4px 8px;
+  padding: 4px 7px;
   border-radius: 12px;
-  max-width: 110px;
+  max-width: 90px;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap; /* 닉네임 세로 찌그러짐 원천 차단 */
+  white-space: nowrap;
+  display: inline-block;
+  line-height: 1.2;
 }
 
-/* 메인 레이아웃 */
+/* 메인 피드 컨테이너 */
 .container {
-  max-width: 600px; /* 모바일 SNS 느낌으로 중앙 폭 제한 */
-  margin: 12px auto;
+  max-width: 560px;
+  margin: 14px auto 60px;
   padding: 0 12px;
 }
 
@@ -92,11 +112,17 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+  padding: 0 2px;
 }
 
 .section-header h2 {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
+}
+
+#postCount {
+  font-size: 12px;
+  color: #888;
 }
 
 .feed-grid {
@@ -108,15 +134,15 @@ body {
 /* 카드 UI */
 .card {
   background: #fff;
-  border: 1px solid #ebebeb;
+  border: 1px solid #ececec;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .card img {
   width: 100%;
-  max-height: 480px;
+  max-height: 500px;
   object-fit: cover;
   display: block;
 }
@@ -128,7 +154,7 @@ body {
 .card-title {
   font-size: 15px;
   font-weight: 700;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .card-footer {
@@ -136,8 +162,7 @@ body {
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  color: #777;
-  margin-top: 6px;
+  color: #666;
 }
 
 .card-actions {
@@ -146,18 +171,38 @@ body {
 }
 
 .action-btn {
-  background: #f7f7f7;
-  border: 1px solid #eee;
-  padding: 5px 10px;
-  border-radius: 16px;
+  background: #fff;
+  border: 1px solid #e2e2e2;
+  padding: 6px 12px;
+  border-radius: 18px;
   font-size: 12px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  font-weight: 600;
 }
 
-/* 모달 */
+.delete-btn {
+  background: #fff0f0;
+  color: #e53e3e;
+  border: 1px solid #fed7d7;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.empty-msg {
+  text-align: center;
+  padding: 40px 0;
+  color: #999;
+  font-size: 14px;
+}
+
+/* 모달 기본 숨김 및 팝업 스타일 */
 .modal {
   display: none;
   position: fixed;
@@ -171,18 +216,19 @@ body {
 
 .modal-content {
   background: #fff;
-  padding: 20px;
+  padding: 22px;
   border-radius: 14px;
   width: 100%;
-  max-width: 340px;
+  max-width: 330px;
   position: relative;
 }
 
 .close-btn {
   position: absolute;
-  top: 12px;
+  top: 10px;
   right: 14px;
   font-size: 22px;
+  color: #888;
   cursor: pointer;
 }
 
@@ -198,6 +244,18 @@ body {
 .full-width {
   width: 100%;
   margin-top: 14px;
-  padding: 10px;
+  padding: 11px;
   font-size: 14px;
+}
+
+.auth-toggle {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.auth-toggle a {
+  color: #000;
+  font-weight: 700;
+  margin-left: 4px;
 }
