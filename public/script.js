@@ -1,281 +1,197 @@
-let currentUser = JSON.parse(localStorage.getItem('picdong_user_session')) || null;
-let allPhotos = [];
-
-// DOM 세팅
-const goHomeBtn = document.getElementById('goHomeBtn');
-const openRankBtn = document.getElementById('openRankBtn');
-const openAuthModalBtn = document.getElementById('openAuthModalBtn');
-const userProfile = document.getElementById('userProfile');
-const currentNickname = document.getElementById('currentNickname');
-const openMyPageBtn = document.getElementById('openMyPageBtn');
-const logoutBtn = document.getElementById('logoutBtn');
-const openUploadBtn = document.getElementById('openUploadBtn');
-
-const homeView = document.getElementById('homeView');
-const rankView = document.getElementById('rankView');
-const myPageView = document.getElementById('myPageView');
+let currentUser = localStorage.getItem('picdong_user') || null;
+let isSignUpMode = false;
+let isUploading = false; // 중복 업로드 방지 플래그
 
 const authModal = document.getElementById('authModal');
-const tabLoginBtn = document.getElementById('tabLoginBtn');
-const tabRegisterBtn = document.getElementById('tabRegisterBtn');
-const loginForm = document.getElementById('loginForm');
-const registerForm = document.getElementById('registerForm');
-
 const uploadModal = document.getElementById('uploadModal');
-const photoInput = document.getElementById('photoInput');
-const previewContainer = document.getElementById('previewContainer');
-const dropZone = document.getElementById('dropZone');
+const authBtn = document.getElementById('authBtn');
+const uploadBtn = document.getElementById('uploadBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const userInfo = document.getElementById('userInfo');
+const feedList = document.getElementById('feedList');
+const postCount = document.getElementById('postCount');
+const submitUploadBtn = document.getElementById('submitUploadBtn');
 
-// [관리자 배지 UI 업데이트]
-function updateAuthUI() {
+function updateUI() {
   if (currentUser) {
-    userProfile.style.display = 'flex';
-    openAuthModalBtn.style.display = 'none';
-    
-    // 내 프로필 이름에 관리자 표시
-    const adminBadge = currentUser.id === 'admin_donghang' ? '👑[관리자] ' : '';
-    currentNickname.textContent = adminBadge + currentUser.nickname;
+    if (authBtn) authBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+    if (userInfo) {
+      userInfo.style.display = 'inline-flex';
+      userInfo.textContent = `${currentUser}님`;
+    }
   } else {
-    userProfile.style.display = 'none';
-    openAuthModalBtn.style.display = 'block';
-    showView('home'); 
+    if (authBtn) authBtn.style.display = 'inline-flex';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    if (userInfo) userInfo.style.display = 'none';
   }
 }
 
-// 화면 전환
-function showView(view) {
-  homeView.style.display = 'none'; rankView.style.display = 'none'; myPageView.style.display = 'none';
-  if (view === 'home') { homeView.style.display = 'block'; fetchPhotos(); } 
-  else if (view === 'rank') { rankView.style.display = 'block'; fetchPhotos(); } 
-  else if (view === 'mypage') {
-    if (!currentUser) { alert('로그인이 필요합니다.'); authModal.style.display = 'flex'; switchAuthTab('login'); return; }
-    myPageView.style.display = 'block';
-    
-    const adminBadge = currentUser.id === 'admin_donghang' ? '👑[관리자] ' : '';
-    document.getElementById('myPageNick').textContent = adminBadge + currentUser.nickname;
-    document.getElementById('myPageId').textContent = `@${currentUser.username}`;
-    renderMyPageContent();
-  }
-}
-goHomeBtn.addEventListener('click', () => showView('home'));
-openRankBtn.addEventListener('click', () => showView('rank'));
-openMyPageBtn.addEventListener('click', () => showView('mypage'));
+// 피드 목록 가져오기
+async function loadPosts() {
+  try {
+    const res = await fetch('/api/posts');
+    const posts = await res.json();
+    if (postCount) postCount.textContent = `${posts.length}장`;
 
-// 로그인/회원가입
-openAuthModalBtn.addEventListener('click', () => { authModal.style.display = 'flex'; switchAuthTab('login'); });
-document.getElementById('closeAuthModalBtn').addEventListener('click', () => { authModal.style.display = 'none'; });
+    if (posts.length === 0) {
+      feedList.innerHTML = '<p class="empty-msg" style="padding:20px;text-align:center;color:#888;">사진이 없습니다.</p>';
+      return;
+    }
 
-function switchAuthTab(tab) {
-  document.querySelectorAll('.error-text').forEach(el => el.textContent = '');
-  if (tab === 'login') {
-    tabLoginBtn.classList.add('active'); tabRegisterBtn.classList.remove('active');
-    loginForm.style.display = 'block'; registerForm.style.display = 'none';
-  } else {
-    tabRegisterBtn.classList.add('active'); tabLoginBtn.classList.remove('active');
-    registerForm.style.display = 'block'; loginForm.style.display = 'none';
-  }
-}
-tabLoginBtn.addEventListener('click', () => switchAuthTab('login'));
-tabRegisterBtn.addEventListener('click', () => switchAuthTab('register'));
-
-loginForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const username = document.getElementById('loginUsername').value;
-  const password = document.getElementById('loginPassword').value;
-  const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
-  const data = await res.json();
-  if (res.ok) {
-    currentUser = data.user; localStorage.setItem('picdong_user_session', JSON.stringify(currentUser));
-    updateAuthUI(); authModal.style.display = 'none'; loginForm.reset(); fetchPhotos();
-  } else { document.getElementById('loginErrorMsg').textContent = data.message; }
-});
-
-registerForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  document.getElementById('regUserError').textContent = ''; document.getElementById('regNickError').textContent = '';
-  const username = document.getElementById('regUsername').value;
-  const password = document.getElementById('regPassword').value;
-  const nickname = document.getElementById('regNickname').value;
-  const res = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password, nickname }) });
-  const data = await res.json();
-  if (res.ok) {
-    alert('가입 환영합니다! 로그인 해주세요.'); switchAuthTab('login'); document.getElementById('loginUsername').value = username; registerForm.reset();
-  } else {
-    if (data.field === 'username') document.getElementById('regUserError').textContent = data.message;
-    else if (data.field === 'nickname') document.getElementById('regNickError').textContent = data.message;
-    else alert(data.message);
-  }
-});
-
-logoutBtn.addEventListener('click', () => { currentUser = null; localStorage.removeItem('picdong_user_session'); updateAuthUI(); });
-
-// 업로드 모달
-openUploadBtn.addEventListener('click', () => {
-  if (!currentUser) { alert('로그인이 필요합니다.'); return authModal.style.display = 'flex'; }
-  uploadModal.style.display = 'flex';
-});
-document.getElementById('closeUploadModalBtn').addEventListener('click', () => uploadModal.style.display = 'none');
-document.getElementById('cancelUploadBtn').addEventListener('click', () => uploadModal.style.display = 'none');
-
-photoInput.addEventListener('change', () => {
-  if (photoInput.files[0]) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      document.getElementById('previewImg').src = e.target.result;
-      dropZone.style.display = 'none'; previewContainer.style.display = 'block';
-      document.getElementById('submitBtn').disabled = false;
-    };
-    reader.readAsDataURL(photoInput.files[0]);
-  }
-});
-
-document.getElementById('removeFileBtn').addEventListener('click', () => {
-  photoInput.value = ''; previewContainer.style.display = 'none'; dropZone.style.display = 'block'; document.getElementById('submitBtn').disabled = true;
-});
-
-document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const formData = new FormData();
-  formData.append('photo', photoInput.files[0]);
-  formData.append('userId', currentUser.id);
-  formData.append('author', currentUser.nickname);
-  const res = await fetch('/api/upload', { method: 'POST', body: formData });
-  if (res.ok) {
-    uploadModal.style.display = 'none';
-    photoInput.value = ''; previewContainer.style.display = 'none'; dropZone.style.display = 'block';
-    showView('home');
-  }
-});
-
-// 피드 및 랭킹 데이터 불러오기
-async function fetchPhotos() {
-  const res = await fetch('/api/photos');
-  allPhotos = await res.json();
-  
-  document.getElementById('photoCount').textContent = `${allPhotos.length}장`;
-  renderGrid(allPhotos, document.getElementById('galleryGrid'));
-  
-  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const weeklyTop = [...allPhotos]
-    .filter(p => new Date(p.createdAt).getTime() > oneWeekAgo && (p.likes || []).length > 0)
-    .sort((a, b) => b.likes.length - a.likes.length).slice(0, 10);
-  
-  const weeklyGrid = document.getElementById('weeklyGrid');
-  if (weeklyTop.length > 0) {
-    renderGrid(weeklyTop, weeklyGrid, true);
-    weeklyGrid.parentElement.style.display = 'block';
-  } else {
-    weeklyGrid.parentElement.style.display = 'none';
-  }
-}
-
-// [핵심: 관리자 권한 및 UI 렌더링]
-function renderGrid(posts, container, isBest = false, allowDelete = false) {
-  container.innerHTML = posts.length === 0 ? '<p style="color:#999; margin-top: 20px;">사진이 없습니다.</p>' : '';
-  
-  // 접속자가 관리자인지 확인
-  const isAdmin = currentUser && currentUser.id === 'admin_donghang';
-
-  posts.forEach((post, index) => {
-    const card = document.createElement('div');
-    card.className = 'photo-card';
-    
-    const likes = post.likes || [];
-    const bookmarks = post.bookmarks || [];
-    const isLiked = currentUser && likes.includes(currentUser.id);
-    const isBookmarked = currentUser && bookmarks.includes(currentUser.id);
-    
-    // 삭제 권한: 내 마이페이지(allowDelete)이거나, 내가 관리자면 언제 어디서든 삭제 가능
-    const canDelete = allowDelete || isAdmin;
-    let deleteBtnHTML = canDelete ? `<button class="btn-delete-post" onclick="deletePhoto('${post.id}')">이 사진 삭제하기</button>` : '';
-    let rankBadge = isBest ? `<span class="badge-hot">${index + 1}위 🔥</span>` : '';
-
-    // 작성자가 관리자면 작성자 이름에 배지 붙여주기
-    const authorLabel = post.userId === 'admin_donghang' 
-      ? `<span style="color:#2563eb; font-weight:800;">👑[관리자]</span> ${post.author}` 
-      : post.author;
-
-    card.innerHTML = `
-      <div class="card-img-wrap" onclick="openLightbox('${post.url}', '${post.author}', '${post.userId}')">
-        ${rankBadge}
-        <img src="${post.url}" loading="lazy">
-      </div>
-      <div class="card-meta">
-        <div class="meta-top">
-          <div class="meta-author">${authorLabel}</div>
-          <div class="meta-date">${new Date(post.createdAt).toLocaleDateString()}</div>
+    feedList.innerHTML = posts.map(post => `
+      <div class="card" id="post-${post._id}">
+        <img src="${post.imageUrl}" alt="${post.title}" loading="lazy">
+        <div class="card-body">
+          <div class="card-title">${post.title}</div>
+          <div class="card-footer">
+            <span>${post.author}</span>
+            <div class="card-actions">
+              <!-- 좋아요 클릭 시 화면 전체를 새로고침하지 않고 숫자만 즉각 수정 -->
+              <button class="action-btn" onclick="likePost('${post._id}', this)">
+                <span class="heart-icon">❤️</span> 
+                <span class="like-count">${post.likes}</span>
+              </button>
+            </div>
+          </div>
         </div>
-        <div class="action-group">
-          <button class="icon-btn ${isLiked ? 'liked' : ''}" onclick="toggleAction('${post.id}', 'like')">
-            ${isLiked ? '❤️' : '🤍'} ${likes.length}
-          </button>
-          <button class="icon-btn ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleAction('${post.id}', 'bookmark')">
-            ${isBookmarked ? '🔖' : '📑'} 저장
-          </button>
-        </div>
-        ${deleteBtnHTML}
       </div>
-    `;
-    container.appendChild(card);
-  });
+    `).join('');
+  } catch (err) {
+    console.error('피드 로딩 에러:', err);
+  }
 }
 
-async function toggleAction(postId, type) {
-  if (!currentUser) { alert('로그인이 필요합니다.'); authModal.style.display = 'flex'; switchAuthTab('login'); return; }
-  await fetch(`/api/photos/${postId}/${type}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) });
-  
-  if (myPageView.style.display === 'block') { await fetchPhotos(); renderMyPageContent(); } 
-  else { fetchPhotos(); }
-}
+// ⚡ 깜빡임 없는 부분 업데이트(Optimistic Update) 좋아요 기능
+window.likePost = async function(id, btnElement) {
+  try {
+    const countSpan = btnElement.querySelector('.like-count');
+    // 1. 화면의 숫자부터 1 올려서 깜빡임 없이 즉각 반응
+    const currentCount = parseInt(countSpan.textContent, 10) || 0;
+    countSpan.textContent = currentCount + 1;
 
-// 마이페이지
-let currentMyTab = 'myUploads';
-document.querySelectorAll('.my-tab').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    document.querySelectorAll('.my-tab').forEach(b => b.classList.remove('active'));
-    e.target.classList.add('active'); currentMyTab = e.target.dataset.target; renderMyPageContent();
-  });
-});
-
-function renderMyPageContent() {
-  const container = document.getElementById('myPageContent');
-  let filtered = [];
-  let allowDelete = false;
-
-  if (currentMyTab === 'myUploads') { filtered = allPhotos.filter(p => p.userId === currentUser.id); allowDelete = true; } 
-  else if (currentMyTab === 'myLikes') { filtered = allPhotos.filter(p => (p.likes || []).includes(currentUser.id)); } 
-  else if (currentMyTab === 'myBookmarks') { filtered = allPhotos.filter(p => (p.bookmarks || []).includes(currentUser.id)); }
-  
-  renderGrid(filtered, container, false, allowDelete);
-}
-
-// 사진 삭제
-async function deletePhoto(postId) {
-  if (!confirm('정말 삭제하시겠습니까? (관리자는 모든 사진 삭제 가능)')) return;
-  const res = await fetch(`/api/photos/${postId}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id }) });
-  if (res.ok) {
-    await fetchPhotos();
-    if (myPageView.style.display === 'block') renderMyPageContent();
-  } else {
+    // 2. 서버로 조용히 전송
+    const res = await fetch(`/api/posts/${id}/like`, { method: 'POST' });
     const data = await res.json();
-    alert(data.message);
-  }
-}
-
-// 라이트박스 (크게 보기)
-const imageModal = document.getElementById('imageModal');
-function openLightbox(url, author, authorUserId) {
-  document.getElementById('modalImg').src = url;
-  
-  // 크게 보기 창에서도 관리자 배지 노출
-  const authorLabel = authorUserId === 'admin_donghang' 
-    ? `👑[관리자] ${author}` 
-    : `📸 ${author}`;
     
-  document.getElementById('modalAuthor').textContent = authorLabel;
-  imageModal.style.display = 'flex';
-}
-document.getElementById('closeImageModalBtn').addEventListener('click', () => imageModal.style.display = 'none');
-window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { imageModal.style.display = 'none'; uploadModal.style.display = 'none'; authModal.style.display = 'none'; } });
+    // 3. 서버의 실제 값으로 보정 (전체 화면 새로고침 X)
+    if (data.success && typeof data.likes === 'number') {
+      countSpan.textContent = data.likes;
+    }
+  } catch (err) {
+    console.error('좋아요 실패:', err);
+  }
+};
 
-updateAuthUI(); showView('home');
+// 모달 제어
+if (authBtn) authBtn.onclick = () => { authModal.style.display = 'flex'; };
+if (uploadBtn) {
+  uploadBtn.onclick = () => {
+    if (!currentUser) return alert('로그인 후 이용해 주세요.');
+    uploadModal.style.display = 'flex';
+  };
+}
+const closeAuth = document.getElementById('closeAuthModal');
+const closeUpload = document.getElementById('closeUploadModal');
+if (closeAuth) closeAuth.onclick = () => { authModal.style.display = 'none'; };
+if (closeUpload) closeUpload.onclick = () => { uploadModal.style.display = 'none'; };
+
+// 회원가입 / 로그인 토글
+const toggleAuthMode = document.getElementById('toggleAuthMode');
+if (toggleAuthMode) {
+  toggleAuthMode.onclick = (e) => {
+    e.preventDefault();
+    isSignUpMode = !isSignUpMode;
+    document.getElementById('modalTitle').textContent = isSignUpMode ? '회원가입' : '로그인';
+    toggleAuthMode.textContent = isSignUpMode ? '로그인' : '회원가입';
+    document.getElementById('toggleAuthText').textContent = isSignUpMode ? '이미 계정이 있으신가요?' : '계정이 없으신가요?';
+  };
+}
+
+// 로그인/회원가입 처리
+const submitAuthBtn = document.getElementById('submitAuthBtn');
+if (submitAuthBtn) {
+  submitAuthBtn.onclick = async () => {
+    const username = document.getElementById('authUsername').value.trim();
+    const password = document.getElementById('authPassword').value.trim();
+    if (!username || !password) return alert('아이디와 비밀번호를 입력해주세요.');
+
+    const endpoint = isSignUpMode ? '/api/register' : '/api/login';
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      if (isSignUpMode) {
+        alert('회원가입 성공! 로그인해 주세요.');
+        toggleAuthMode.click();
+      } else {
+        currentUser = data.username;
+        localStorage.setItem('picdong_user', currentUser);
+        authModal.style.display = 'none';
+        updateUI();
+      }
+    } else {
+      alert(data.message || '오류가 발생했습니다.');
+    }
+  };
+}
+
+// 로그아웃
+if (logoutBtn) {
+  logoutBtn.onclick = () => {
+    localStorage.removeItem('picdong_user');
+    currentUser = null;
+    updateUI();
+  };
+}
+
+// ⚡ 중복 업로드 방지 & 로딩 버튼 상태 적용
+if (submitUploadBtn) {
+  submitUploadBtn.onclick = async () => {
+    if (isUploading) return; // 이미 전송 중이면 클릭 무시
+
+    const titleInput = document.getElementById('uploadTitle');
+    const fileInput = document.getElementById('uploadFile');
+    const title = titleInput.value.trim();
+    const file = fileInput.files[0];
+
+    if (!title || !file) return alert('제목과 사진을 모두 선택하세요.');
+
+    // 1. 버튼 잠금 및 안내 텍스트 표시
+    isUploading = true;
+    submitUploadBtn.disabled = true;
+    submitUploadBtn.textContent = '사진 업로드 중... ⏳';
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('author', currentUser);
+    formData.append('image', file);
+
+    try {
+      const res = await fetch('/api/posts', { method: 'POST', body: formData });
+      if (res.ok) {
+        uploadModal.style.display = 'none';
+        titleInput.value = '';
+        fileInput.value = '';
+        await loadPosts(); // 새 피드 불러오기
+      } else {
+        alert('업로드에 실패했습니다. 다시 시도해 주세요.');
+      }
+    } catch (err) {
+      alert('업로드 도중 오류가 발생했습니다.');
+    } finally {
+      // 2. 완료 후 버튼 원상복구
+      isUploading = false;
+      submitUploadBtn.disabled = false;
+      submitUploadBtn.textContent = '업로드';
+    }
+  };
+}
+
+// 초기 실행
+updateUI();
+loadPosts();
