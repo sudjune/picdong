@@ -5,12 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>picdong</title>
   <style>
-    /* 리셋 및 기본 설정 */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: #fafafa;
@@ -18,7 +13,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* 상단바 네비게이션 */
+    /* 헤더 */
     .header {
       display: flex;
       justify-content: space-between;
@@ -29,39 +24,32 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      gap: 8px;
+      gap: 6px;
     }
-
     .logo-area {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       cursor: pointer;
       flex-shrink: 0;
     }
-
-    /* 화면을 덮던 거대 로고 크기 고정 */
-    .logo-area img, .brand-logo, header img {
-      width: 32px !important;
-      height: 32px !important;
+    .brand-logo {
+      width: 28px !important;
+      height: 28px !important;
       border-radius: 50% !important;
       object-fit: cover !important;
       display: block !important;
     }
-
     .brand-name {
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 800;
       letter-spacing: -0.5px;
     }
-
     .nav-buttons {
       display: flex;
       align-items: center;
       gap: 6px;
-      flex-wrap: nowrap;
     }
-
     .btn {
       padding: 6px 10px;
       border: none;
@@ -73,144 +61,180 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      transition: background 0.2s;
     }
-
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .btn-primary {
-      background-color: #000;
-      color: #fff;
-    }
-
-    .btn-secondary {
-      background-color: #f1f2f4;
-      color: #333;
-    }
-
-    /* 닉네임 뱃지 찌그러짐 방지 */
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background-color: #000; color: #fff; }
+    .btn-secondary { background-color: #f1f2f4; color: #333; }
+    
+    /* 닉네임 뱃지 버튼 (클릭 시 마이페이지로 이동) */
     .user-info {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       background-color: #eef4ff;
       color: #2b6cb0;
-      padding: 4px 7px;
-      border-radius: 12px;
-      max-width: 90px;
+      padding: 6px 10px;
+      border-radius: 14px;
+      max-width: 120px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      display: inline-block;
-      line-height: 1.2;
-    }
-
-    /* 메인 피드 컨테이너 */
-    .container {
-      max-width: 540px;
-      margin: 14px auto 60px;
-      padding: 0 12px;
-    }
-
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      padding: 0 2px;
-    }
-
-    .section-header h2 {
-      font-size: 16px;
-      font-weight: 700;
-    }
-
-    #postCount {
-      font-size: 12px;
-      color: #888;
-    }
-
-    .feed-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    /* 사진 카드 */
-    .card {
-      background: #fff;
-      border: 1px solid #ececec;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-    }
-
-    .card img {
-      width: 100%;
-      max-height: 500px;
-      object-fit: cover;
-      display: block;
-    }
-
-    .card-body {
-      padding: 12px 14px;
-    }
-
-    .card-title {
-      font-size: 15px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .card-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      color: #666;
-    }
-
-    .card-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .action-btn {
-      background: #fff;
-      border: 1px solid #e2e2e2;
-      padding: 6px 12px;
-      border-radius: 18px;
-      font-size: 12px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      font-weight: 600;
+      border: 1px solid #cce0ff;
+    }
+    .user-info:hover {
+      background-color: #dfeaff;
     }
 
-    .delete-btn {
-      background: #fff0f0;
-      color: #e53e3e;
-      border: 1px solid #fed7d7;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      cursor: pointer;
-      margin-top: 8px;
-      width: 100%;
+    /* 본문 */
+    .container {
+      max-width: 520px;
+      margin: 12px auto 60px;
+      padding: 0 12px;
     }
 
-    .empty-msg {
+    /* 마이페이지 프로필 카드 */
+    .mypage-card {
+      display: none;
+      background: #fff;
+      border: 1px solid #ebebeb;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 16px;
       text-align: center;
-      padding: 40px 0;
-      color: #999;
-      font-size: 14px;
+    }
+    .mypage-avatar {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 10px;
+    }
+    .mypage-name { font-size: 18px; font-weight: 800; }
+    .mypage-id { font-size: 13px; color: #888; margin-top: 2px; }
+
+    /* 마이페이지 3단 탭 */
+    .mypage-tabs {
+      display: flex;
+      gap: 6px;
+      margin-top: 16px;
+      background: #f1f2f4;
+      padding: 4px;
+      border-radius: 8px;
+    }
+    .mypage-tab-btn {
+      flex: 1;
+      padding: 8px 4px;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: #666;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .mypage-tab-btn.active {
+      background: #fff;
+      color: #000;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
 
-    /* 팝업 모달 (기본 숨김 필수) */
+    /* 피드 헤더 */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 12px;
+      padding: 0 2px;
+    }
+    .section-title-wrap h2 { font-size: 17px; font-weight: 800; }
+    .section-desc { font-size: 11px; color: #888; margin-top: 2px; }
+    #postCount { font-size: 12px; color: #888; }
+
+    /* 피드 카드 */
+    .feed-grid { display: flex; flex-direction: column; gap: 14px; }
+    .card {
+      background: #fff;
+      border: 1px solid #ebebeb;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      position: relative;
+    }
+    .rank-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: #ff4757;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 800;
+      z-index: 5;
+    }
+    .card-img-wrap {
+      width: 100%;
+      height: 380px;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-in;
+    }
+    .card-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .card-body { padding: 12px 14px; }
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #666;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .card-actions { display: flex; gap: 8px; }
+    .action-btn {
+      flex: 1;
+      padding: 8px;
+      background: #f8f9fa;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .action-btn.active-like { background: #fff0f0; border-color: #ffd1d1; color: #e53e3e; }
+    .action-btn.active-bookmark { background: #eef4ff; border-color: #c3dafe; color: #2b6cb0; }
+    .delete-btn {
+      margin-top: 10px;
+      width: 100%;
+      padding: 8px;
+      background: #fff;
+      color: #e53e3e;
+      border: 1px solid #ffd5d5;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* 팝업 모달 */
     .modal {
-      display: none; /* 화면 바닥에 펼쳐지는 현상 차단 */
+      display: none;
       position: fixed;
       inset: 0;
       background-color: rgba(0, 0, 0, 0.6);
@@ -219,7 +243,6 @@
       z-index: 1000;
       padding: 16px;
     }
-
     .modal-content {
       background: #fff;
       padding: 22px;
@@ -228,16 +251,14 @@
       max-width: 320px;
       position: relative;
     }
-
     .close-btn {
       position: absolute;
       top: 10px;
       right: 14px;
-      font-size: 22px;
+      font-size: 24px;
       color: #888;
       cursor: pointer;
     }
-
     .input-field {
       width: 100%;
       padding: 10px;
@@ -246,37 +267,51 @@
       border-radius: 8px;
       font-size: 14px;
     }
+    .full-width { width: 100%; margin-top: 14px; padding: 11px; font-size: 14px; }
+    .auth-toggle { margin-top: 14px; text-align: center; font-size: 12px; }
+    .auth-toggle a { color: #000; font-weight: 700; margin-left: 4px; text-decoration: none; }
 
-    .full-width {
-      width: 100%;
+    /* 라이트박스 */
+    .lightbox-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 2000;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      color: #fff;
+      font-size: 30px;
+      cursor: pointer;
+    }
+    .lightbox-img { max-width: 95%; max-height: 80vh; object-fit: contain; border-radius: 8px; }
+    .lightbox-author {
+      color: #fff;
       margin-top: 14px;
-      padding: 11px;
       font-size: 14px;
-    }
-
-    .auth-toggle {
-      margin-top: 14px;
-      text-align: center;
-      font-size: 12px;
-    }
-
-    .auth-toggle a {
-      color: #000;
       font-weight: 700;
-      margin-left: 4px;
-      text-decoration: none;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 6px 14px;
+      border-radius: 20px;
     }
   </style>
 </head>
 <body>
   <!-- 헤더 -->
   <header class="header">
-    <div class="logo-area" onclick="location.reload()">
+    <div class="logo-area" id="brandLogoHome">
       <img src="/pageicon.png" alt="logo" class="brand-logo">
       <span class="brand-name">picdong</span>
     </div>
     <div class="nav-buttons">
       <button id="rankingTabBtn" class="btn btn-secondary">🏆 랭킹</button>
+      <!-- 닉네임 뱃지: 로그인 시 표시되며 누르면 마이페이지로 이동 -->
       <span id="userInfo" class="user-info" style="display: none;"></span>
       <button id="authBtn" class="btn btn-secondary">로그인 / 회원가입</button>
       <button id="logoutBtn" class="btn btn-secondary" style="display: none;">로그아웃</button>
@@ -284,43 +319,13 @@
     </div>
   </header>
 
-  <!-- 본문 피드 -->
   <main class="container">
-    <div class="section-header">
-      <h2 id="sectionTitle">최신 피드</h2>
-      <span id="postCount">0장</span>
-    </div>
-    <div id="feedList" class="feed-grid">
-      <p class="empty-msg">불러오는 중...</p>
-    </div>
-  </main>
-
-  <!-- 로그인/회원가입 모달 -->
-  <div id="authModal" class="modal">
-    <div class="modal-content">
-      <span class="close-btn" id="closeAuthModal">&times;</span>
-      <h3 id="modalTitle">로그인</h3>
-      <input type="text" id="authUsername" placeholder="아이디" class="input-field">
-      <input type="password" id="authPassword" placeholder="비밀번호" class="input-field">
-      <button id="submitAuthBtn" class="btn btn-primary full-width">확인</button>
-      <div class="auth-toggle">
-        <span id="toggleAuthText">계정이 없으신가요?</span>
-        <a href="#" id="toggleAuthMode">회원가입</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- 사진 업로드 모달 -->
-  <div id="uploadModal" class="modal">
-    <div class="modal-content">
-      <span class="close-btn" id="closeUploadModal">&times;</span>
-      <h3>새 사진 업로드</h3>
-      <input type="text" id="uploadTitle" placeholder="사진 제목을 입력하세요" class="input-field">
-      <input type="file" id="uploadFile" accept="image/*" class="input-field">
-      <button id="submitUploadBtn" class="btn btn-primary full-width">게시하기</button>
-    </div>
-  </div>
-
-  <script src="/script.js"></script>
-</body>
-</html>
+    <!-- 마이페이지 컴포넌트 -->
+    <div id="mypageSection" class="mypage-card">
+      <div class="mypage-avatar">👤</div>
+      <div id="mypageName" class="mypage-name">동행이1호팬</div>
+      <div id="mypageId" class="mypage-id">@okjune</div>
+      <div class="mypage-tabs">
+        <button class="mypage-tab-btn active" id="tabUploads">업로드한 사진</button>
+        <button class="mypage-tab-btn" id="tabLikes">좋아요 누른 사진</button>
+        <button class="mypage-tab-btn" id="tabBookmarks">저장한 책갈피</button>

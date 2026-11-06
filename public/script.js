@@ -1,12 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-  let currentUser = localStorage.getItem('picdong_user') || null;
+  let currentUser = localStorage.getItem('picdong_user') || null;       // 아이디 (@okjune)
+  let currentNickname = localStorage.getItem('picdong_nick') || currentUser; // 닉네임 (동행이1호팬)
   let currentView = 'feed'; // 'feed' | 'ranking' | 'mypage'
   let myTab = 'uploads';    // 'uploads' | 'likes' | 'bookmarks'
   let isSignUpMode = false;
   let isUploading = false;
   let userBookmarks = [];
 
-  // DOM 요소 선택
   const authModal = document.getElementById('authModal');
   const uploadModal = document.getElementById('uploadModal');
   const lightboxModal = document.getElementById('lightboxModal');
@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const sectionTitle = document.getElementById('sectionTitle');
   const sectionDesc = document.getElementById('sectionDesc');
   const mypageSection = document.getElementById('mypageSection');
+  const mypageName = document.getElementById('mypageName');
+  const mypageId = document.getElementById('mypageId');
   const submitUploadBtn = document.getElementById('submitUploadBtn');
   const submitAuthBtn = document.getElementById('submitAuthBtn');
   const toggleAuthMode = document.getElementById('toggleAuthMode');
@@ -28,30 +30,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeUploadModal = document.getElementById('closeUploadModal');
   const closeLightbox = document.getElementById('closeLightbox');
 
-  // 북마크 동기화 (오류 무시 처리)
+  const tabUploads = document.getElementById('tabUploads');
+  const tabLikes = document.getElementById('tabLikes');
+  const tabBookmarks = document.getElementById('tabBookmarks');
+
   async function syncBookmarks() {
-    if (!currentUser) {
-      userBookmarks = [];
-      return;
-    }
+    if (!currentUser) { userBookmarks = []; return; }
     try {
       const res = await fetch(`/api/users/${encodeURIComponent(currentUser)}/bookmarks`);
-      if (res.ok) {
-        userBookmarks = await res.json();
-      }
-    } catch (e) {
-      userBookmarks = [];
-    }
+      if (res.ok) userBookmarks = await res.json();
+    } catch (e) { userBookmarks = []; }
   }
 
-  // 상단바 로그인 UI 업데이트
+  // 상단 바 UI: <닉네임>님 형태로 표기
   function updateUI() {
     if (currentUser) {
       if (authBtn) authBtn.style.display = 'none';
       if (logoutBtn) logoutBtn.style.display = 'inline-flex';
       if (userInfo) {
         userInfo.style.display = 'inline-flex';
-        userInfo.textContent = `${currentUser}님`;
+        userInfo.textContent = `${currentNickname}님`; // <닉네임>님 으로 표시
       }
     } else {
       if (authBtn) authBtn.style.display = 'inline-flex';
@@ -60,21 +58,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 피드 및 랭킹 데이터 불러오기
+  // 마이페이지 뷰 열기
+  function renderMypageView() {
+    currentView = 'mypage';
+    if (mypageSection) mypageSection.style.display = 'block';
+    if (mypageName) mypageName.textContent = currentNickname;
+    if (mypageId) mypageId.textContent = `@${currentUser}`;
+    if (sectionTitle) sectionTitle.textContent = '보관함 피드';
+    if (sectionDesc) sectionDesc.style.display = 'none';
+    loadData();
+  }
+
   async function loadData() {
     await syncBookmarks();
     try {
       const endpoint = currentView === 'ranking' ? '/api/ranking' : '/api/posts';
       const res = await fetch(endpoint);
-      
-      if (!res.ok) throw new Error('서버 응답 에러');
       let posts = await res.json();
       if (!Array.isArray(posts)) posts = [];
 
-      // 마이페이지 탭 필터링
       if (currentView === 'mypage') {
         if (myTab === 'uploads') {
-          posts = posts.filter(p => p.author === currentUser);
+          posts = posts.filter(p => p.author === currentNickname || p.author === currentUser);
         } else if (myTab === 'likes') {
           posts = posts.filter(p => (p.likedUsers || []).includes(currentUser));
         } else if (myTab === 'bookmarks') {
@@ -94,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isLiked = (post.likedUsers || []).includes(currentUser);
         const isBookmarked = userBookmarks.includes(String(postId));
         const formattedDate = post.createdAt ? new Date(post.createdAt).toLocaleDateString() : '';
+        const isMyPost = currentUser && (post.author === currentNickname || post.author === currentUser);
 
         return `
           <div class="card" id="post-${postId}">
@@ -116,25 +122,21 @@ document.addEventListener('DOMContentLoaded', () => {
                   <span>${isBookmarked ? '저장됨' : '저장'}</span>
                 </button>
               </div>
-              ${currentUser === post.author ? `
-                <button class="delete-btn" data-action="delete" data-id="${postId}">이 사진 삭제하기</button>
+              ${isMyPost ? `
+                <button class="delete-btn" data-action="delete" data-id="${postId}" data-author="${post.author}">이 사진 삭제하기</button>
               ` : ''}
             </div>
           </div>
         `;
       }).join('');
     } catch (err) {
-      console.error(err);
-      if (feedList) {
-        feedList.innerHTML = '<p style="text-align:center; padding: 40px 0; color:#888;">사진이 없습니다.</p>';
-      }
+      if (feedList) feedList.innerHTML = '<p style="text-align:center; padding: 40px 0; color:#888;">사진이 없습니다.</p>';
     }
   }
 
-  // 카드 내부 클릭 이벤트 위임 (좋아요, 북마크, 삭제, 사진 확대)
+  // 클릭 이벤트 위임
   if (feedList) {
     feedList.addEventListener('click', async (e) => {
-      // 1. 이미지 클릭 시 라이트박스 확대
       const imgWrap = e.target.closest('.card-img-wrap');
       if (imgWrap) {
         const src = imgWrap.dataset.img;
@@ -147,7 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // 2. 좋아요 버튼
       const likeBtn = e.target.closest('button[data-action="like"]');
       if (likeBtn) {
         if (!currentUser) return alert('로그인 후 이용해 주세요.');
@@ -173,7 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // 3. 북마크 버튼
       const bmkBtn = e.target.closest('button[data-action="bookmark"]');
       if (bmkBtn) {
         if (!currentUser) return alert('로그인 후 이용해 주세요.');
@@ -199,28 +199,30 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // 4. 사진 삭제
       const delBtn = e.target.closest('button[data-action="delete"]');
       if (delBtn) {
         if (!confirm('이 사진을 정말 삭제하시겠습니까?')) return;
         const id = delBtn.dataset.id;
+        const author = delBtn.dataset.author;
         try {
           const res = await fetch(`/api/posts/${id}`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: currentUser })
+            body: JSON.stringify({ author })
           });
           if (res.ok) {
             document.getElementById(`post-${id}`)?.remove();
           } else {
-            alert('삭제에 실패했습니다.');
+            alert('삭제 권한이 없습니다.');
           }
         } catch (err) { alert('삭제 도중 오류가 발생했습니다.'); }
       }
     });
   }
 
-  // 상단 로고 (홈 피드로 전환)
+  // <닉네임>님 뱃지 클릭 시 -> 마이페이지로 즉각 전환
+  if (userInfo) userInfo.onclick = renderMypageView;
+
   if (brandLogoHome) {
     brandLogoHome.onclick = () => {
       currentView = 'feed';
@@ -231,7 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // 랭킹 탭 전환
   if (rankingTabBtn) {
     rankingTabBtn.onclick = () => {
       currentView = 'ranking';
@@ -245,30 +246,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // 사용자 정보 클릭 (마이페이지 전환)
-  if (userInfo) {
-    userInfo.onclick = () => {
-      currentView = 'mypage';
-      if (mypageSection) mypageSection.style.display = 'block';
-      const myName = document.getElementById('mypageName');
-      const myId = document.getElementById('mypageId');
-      if (myName) myName.textContent = currentUser;
-      if (myId) myId.textContent = `@${currentUser}`;
-      if (sectionTitle) sectionTitle.textContent = '보관함 피드';
-      if (sectionDesc) sectionDesc.style.display = 'none';
-      loadData();
-    };
-  }
-
-  // 마이페이지 탭 버튼 핸들러
-  window.switchMyTab = function(tab) {
+  function setTab(tab, btn) {
     myTab = tab;
-    document.querySelectorAll('.mypage-tab-btn').forEach(b => b.classList.remove('active'));
-    if (event && event.target) event.target.classList.add('active');
+    [tabUploads, tabLikes, tabBookmarks].forEach(b => b?.classList.remove('active'));
+    btn?.classList.add('active');
     loadData();
-  };
+  }
+  if (tabUploads) tabUploads.onclick = () => setTab('uploads', tabUploads);
+  if (tabLikes) tabLikes.onclick = () => setTab('likes', tabLikes);
+  if (tabBookmarks) tabBookmarks.onclick = () => setTab('bookmarks', tabBookmarks);
 
-  // 모달 제어
   if (authBtn && authModal) authBtn.onclick = () => { authModal.style.display = 'flex'; };
   if (uploadBtn && uploadModal) {
     uploadBtn.onclick = () => {
@@ -280,57 +267,54 @@ document.addEventListener('DOMContentLoaded', () => {
   if (closeUploadModal && uploadModal) closeUploadModal.onclick = () => { uploadModal.style.display = 'none'; };
   if (closeLightbox && lightboxModal) closeLightbox.onclick = () => { lightboxModal.style.display = 'none'; };
 
-  // 회원가입 모드 토글
+  // 회원가입 모드 토글 (닉네임 인풋창 보이기/숨기기)
   if (toggleAuthMode) {
     toggleAuthMode.onclick = (e) => {
       e.preventDefault();
       isSignUpMode = !isSignUpMode;
       const modalTitle = document.getElementById('modalTitle');
       const toggleAuthText = document.getElementById('toggleAuthText');
+      const authNickname = document.getElementById('authNickname');
       if (modalTitle) modalTitle.textContent = isSignUpMode ? '회원가입' : '로그인';
       toggleAuthMode.textContent = isSignUpMode ? '로그인' : '회원가입';
       if (toggleAuthText) toggleAuthText.textContent = isSignUpMode ? '이미 계정이 있으신가요?' : '계정이 없으신가요?';
+      if (authNickname) authNickname.style.display = isSignUpMode ? 'block' : 'none';
     };
   }
 
-  // 로그인 / 회원가입 제출
+  // 로그인 / 회원가입 요청
   if (submitAuthBtn) {
     submitAuthBtn.onclick = async () => {
-      const usernameInput = document.getElementById('authUsername');
-      const passwordInput = document.getElementById('authPassword');
-      const username = usernameInput ? usernameInput.value.trim() : '';
-      const password = passwordInput ? passwordInput.value.trim() : '';
-
-      if (!username || !password) return alert('아이디와 비밀번호를 모두 입력하세요.');
+      const username = document.getElementById('authUsername')?.value.trim();
+      const nickname = document.getElementById('authNickname')?.value.trim();
+      const password = document.getElementById('authPassword')?.value.trim();
+      if (!username || !password) return alert('아이디와 비밀번호를 모두 입력해주세요.');
 
       const endpoint = isSignUpMode ? '/api/register' : '/api/login';
       try {
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify({ username, nickname, password })
         });
         const data = await res.json();
-
         if (res.ok) {
           if (isSignUpMode) {
-            alert('회원가입이 완료되었습니다. 로그인해 주세요!');
+            alert('회원가입 성공! 로그인해 주세요.');
             if (toggleAuthMode) toggleAuthMode.click();
           } else {
             currentUser = data.username;
+            currentNickname = data.nickname || data.username;
             localStorage.setItem('picdong_user', currentUser);
+            localStorage.setItem('picdong_nick', currentNickname);
             if (authModal) authModal.style.display = 'none';
-            if (usernameInput) usernameInput.value = '';
-            if (passwordInput) passwordInput.value = '';
             updateUI();
-            loadData();
+            renderMypageView(); // 로그인 직후 마이페이지로 이동
           }
         } else {
           alert(data.message || '요청 실패');
         }
-      } catch (err) {
-        alert('서버와 통신할 수 없습니다.');
-      }
+      } catch (e) { alert('서버 통신 오류'); }
     };
   }
 
@@ -338,21 +322,22 @@ document.addEventListener('DOMContentLoaded', () => {
   if (logoutBtn) {
     logoutBtn.onclick = () => {
       localStorage.removeItem('picdong_user');
+      localStorage.removeItem('picdong_nick');
       currentUser = null;
+      currentNickname = null;
       updateUI();
       if (brandLogoHome) brandLogoHome.click();
     };
   }
 
-  // 사진 업로드 (중복 클릭 방지)
+  // 사진 업로드
   if (submitUploadBtn) {
     submitUploadBtn.onclick = async () => {
       if (isUploading) return;
-
       const titleInput = document.getElementById('uploadTitle');
       const fileInput = document.getElementById('uploadFile');
-      const title = titleInput ? titleInput.value.trim() : '';
-      const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+      const title = titleInput?.value.trim();
+      const file = fileInput?.files ? fileInput.files[0] : null;
 
       if (!file) return alert('사진 파일을 선택하세요.');
 
@@ -362,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const formData = new FormData();
       formData.append('title', title || '무제');
-      formData.append('author', currentUser || '익명');
+      formData.append('author', currentNickname || currentUser || '익명');
       formData.append('image', file);
 
       try {
@@ -373,10 +358,10 @@ document.addEventListener('DOMContentLoaded', () => {
           if (fileInput) fileInput.value = '';
           await loadData();
         } else {
-          alert('사진 업로드 실패 (5MB 초과 여부를 확인하세요)');
+          alert('사진 업로드 실패 (5MB 제한)');
         }
       } catch (e) {
-        alert('업로드 도중 오류가 발생했습니다.');
+        alert('업로드 도중 오류 발생');
       } finally {
         isUploading = false;
         submitUploadBtn.disabled = false;
@@ -385,7 +370,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // 초기 시작
   updateUI();
   loadData();
 });

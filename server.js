@@ -5,7 +5,7 @@ const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto'); // Node.js 기본 내장 암호화 모듈 (별도 설치 필요 없음)
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,7 +14,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Cloudinary 연동
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -36,7 +35,6 @@ const upload = multer({
 const POSTS_FILE = path.join(__dirname, 'posts.json');
 const USERS_FILE = path.join(__dirname, 'users.json');
 
-// 파일 읽기/쓰기 안전 함수
 function readData(filePath) {
   try {
     if (!fs.existsSync(filePath)) {
@@ -46,7 +44,6 @@ function readData(filePath) {
     const content = fs.readFileSync(filePath, 'utf8');
     return content.trim() ? JSON.parse(content) : [];
   } catch (err) {
-    console.error(`파일 읽기 오류 (${filePath}):`, err);
     return [];
   }
 }
@@ -54,42 +51,31 @@ function readData(filePath) {
 function writeData(filePath, data) {
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
-  } catch (err) {
-    console.error(`파일 저장 오류 (${filePath}):`, err);
-  }
+  } catch (err) {}
 }
 
-// 비밀번호 암호화 함수 (내장 crypto 활용)
 function hashPassword(password) {
   return crypto.createHash('sha256').update(password + 'picdong_secret_salt').digest('hex');
 }
 
-// 1. 피드 목록 조회 API
+// 1. 피드 조회
 app.get('/api/posts', (req, res) => {
-  try {
-    const posts = readData(POSTS_FILE);
-    posts.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    res.json(posts);
-  } catch (err) {
-    res.status(500).json([]);
-  }
+  const posts = readData(POSTS_FILE);
+  posts.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  res.json(posts);
 });
 
-// 2. 랭킹 조회 API
+// 2. 랭킹 조회
 app.get('/api/ranking', (req, res) => {
-  try {
-    const posts = readData(POSTS_FILE);
-    const sorted = [...posts].sort((a, b) => (b.likes || 0) - (a.likes || 0));
-    res.json(sorted.slice(0, 20));
-  } catch (err) {
-    res.status(500).json([]);
-  }
+  const posts = readData(POSTS_FILE);
+  const sorted = [...posts].sort((a, b) => (b.likes || 0) - (a.likes || 0));
+  res.json(sorted.slice(0, 20));
 });
 
-// 3. 회원가입 API (암호화 적용)
+// 3. 회원가입 (아이디 + 닉네임)
 app.post('/api/register', (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, nickname, password } = req.body;
     if (!username || !password) return res.status(400).json({ message: '아이디와 비밀번호를 모두 입력하세요.' });
 
     const users = readData(USERS_FILE);
@@ -99,6 +85,7 @@ app.post('/api/register', (req, res) => {
 
     users.push({
       username,
+      nickname: nickname || username, // 닉네임 미입력 시 아이디로 대체
       password: hashPassword(password),
       bookmarks: [],
       createdAt: new Date().toISOString()
@@ -106,11 +93,11 @@ app.post('/api/register', (req, res) => {
     writeData(USERS_FILE, users);
     res.json({ success: true, message: '회원가입 완료' });
   } catch (err) {
-    res.status(500).json({ message: '회원가입 중 오류가 발생했습니다.' });
+    res.status(500).json({ message: '회원가입 오류' });
   }
 });
 
-// 4. 로그인 API (암호화 대조)
+// 4. 로그인 (닉네임 함께 반환)
 app.post('/api/login', (req, res) => {
   try {
     const { username, password } = req.body;
@@ -120,7 +107,11 @@ app.post('/api/login', (req, res) => {
 
     if (!user) return res.status(400).json({ message: '아이디 또는 비밀번호가 올바르지 않습니다.' });
 
-    res.json({ success: true, username: user.username });
+    res.json({
+      success: true,
+      username: user.username,
+      nickname: user.nickname || user.username
+    });
   } catch (err) {
     res.status(500).json({ message: '로그인 오류' });
   }
@@ -212,7 +203,7 @@ app.post('/api/posts/:id/bookmark', (req, res) => {
   }
 });
 
-// 8. 북마크 목록 조회
+// 8. 북마크 조회
 app.get('/api/users/:username/bookmarks', (req, res) => {
   try {
     const users = readData(USERS_FILE);
@@ -223,16 +214,16 @@ app.get('/api/users/:username/bookmarks', (req, res) => {
   }
 });
 
-// 9. 사진 삭제 (작성자 검증)
+// 9. 사진 삭제
 app.delete('/api/posts/:id', (req, res) => {
   try {
-    const { username } = req.body;
+    const { author } = req.body;
     let posts = readData(POSTS_FILE);
     const post = posts.find(p => String(p._id) === String(req.params.id) || String(p.id) === String(req.params.id));
 
     if (!post) return res.status(404).json({ message: '사진을 찾을 수 없습니다.' });
-    if (post.author !== username) {
-      return res.status(403).json({ message: '삭제 권한이 없습니다.' });
+    if (post.author !== author) {
+      return res.status(403).json({ message: '본인의 사진만 삭제할 수 있습니다.' });
     }
 
     posts = posts.filter(p => String(p._id) !== String(req.params.id) && String(p.id) !== String(req.params.id));
