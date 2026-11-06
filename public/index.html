@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>picdong</title>
+  <link rel="icon" type="image/png" href="pageicon.png">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- 상단 네비게이션 -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" id="goHomeBtn">
+        <img src="pageicon.png" alt="icon" class="brand-icon">
+        <span class="logo">pic<span>dong</span></span>
+      </div>
+      <div class="nav-actions">
+        <!-- 🏆 랭킹 버튼 추가 -->
+        <button id="openRankBtn" class="btn-text" style="font-size: 1rem; margin-right: 8px;">🏆 랭킹</button>
+        
+        <button id="openAuthModalBtn" class="btn-auth">로그인 / 회원가입</button>
+        <div id="userProfile" class="user-profile" style="display: none;">
+          <span class="user-badge" id="openMyPageBtn">👤 <strong id="currentNickname"></strong>님</span>
+          <button id="logoutBtn" class="btn-text">로그아웃</button>
+        </div>
+        <button id="openUploadBtn" class="btn-primary">+ 사진 올리기</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- [뷰 1] 홈 메인 피드 (랭킹 제거됨) -->
+  <main id="homeView" class="container">
+    <div class="feed-section">
+      <div class="feed-header">
+        <h2 class="section-title">최신 피드</h2>
+        <span id="photoCount" class="photo-count">0장</span>
+      </div>
+      <div id="galleryGrid" class="gallery-grid"></div>
+    </div>
+  </main>
+
+  <!-- [뷰 2] 랭킹 화면 (새로 추가됨) -->
+  <main id="rankView" class="container" style="display: none;">
+    <div class="feed-section">
+      <div class="feed-header">
+        <h2 class="section-title">🏆 명예의 전당 (주간 베스트)</h2>
+        <span class="photo-count">최근 7일 동안 가장 많은 하트를 받은 사진</span>
+      </div>
+      <div id="weeklyGrid" class="gallery-grid best-grid"></div>
+    </div>
+  </main>
+
+  <!-- [뷰 3] 마이페이지 -->
+  <main id="myPageView" class="container" style="display: none;">
+    <div class="mypage-header">
+      <h2>마이페이지</h2>
+      <div class="my-info-card">
+        <div class="my-avatar">👤</div>
+        <div class="my-details">
+          <h3 id="myPageNick">닉네임</h3>
+          <p id="myPageId" class="text-muted">아이디</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="mypage-tabs">
+      <button class="my-tab active" data-target="myUploads">업로드한 사진</button>
+      <button class="my-tab" data-target="myLikes">좋아요 누른 사진</button>
+      <button class="my-tab" data-target="myBookmarks">저장한 책갈피</button>
+    </div>
+    <div id="myPageContent" class="gallery-grid mypage-grid"></div>
+  </main>
+
+  <!-- 고급 로그인/회원가입 모달 -->
+  <div id="authModal" class="modal-overlay">
+    <div class="auth-card">
+      <div class="auth-header">
+        <button class="auth-tab active" id="tabLoginBtn">로그인</button>
+        <button class="auth-tab" id="tabRegisterBtn">회원가입</button>
+        <button class="modal-close" id="closeAuthModalBtn">&times;</button>
+      </div>
+
+      <form id="loginForm" class="auth-form">
+        <input type="text" id="loginUsername" class="auth-input" placeholder="아이디" required>
+        <input type="password" id="loginPassword" class="auth-input" placeholder="비밀번호" required>
+        <p id="loginErrorMsg" class="error-text"></p>
+        <button type="submit" class="btn-primary auth-submit">로그인</button>
+      </form>
+
+      <form id="registerForm" class="auth-form" style="display: none;">
+        <input type="text" id="regUsername" class="auth-input" placeholder="영문/숫자 아이디" required>
+        <p id="regUserError" class="error-text"></p>
+        
+        <input type="password" id="regPassword" class="auth-input" placeholder="비밀번호" required>
+        
+        <input type="text" id="regNickname" class="auth-input" placeholder="사용할 닉네임 (비속어 불가)" maxlength="10" required>
+        <p id="regNickError" class="error-text"></p>
+        
+        <button type="submit" class="btn-primary auth-submit">가입하기</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 사진 업로드 모달 -->
+  <div id="uploadModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>새 사진 업로드</h3>
+        <button class="modal-close" id="closeUploadModalBtn">&times;</button>
+      </div>
+      <form id="uploadForm">
+        <div class="upload-dropzone-box">
+          <input type="file" id="photoInput" accept="image/*" required>
+          <label for="photoInput" class="upload-dropzone" id="dropZone">
+            <span class="drop-icon">📷</span>
+            <p><strong>클릭하여 사진 선택</strong></p>
+          </label>
+          <div id="previewContainer" class="preview-container" style="display: none;">
+            <div class="preview-wrapper">
+              <img id="previewImg" src="">
+              <button type="button" id="removeFileBtn" class="remove-btn">✕</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="cancelUploadBtn">취소</button>
+          <button type="submit" id="submitBtn" class="btn-primary" disabled>게시하기</button>
+        </div>
+      </form>
+      <div id="uploadStatus" class="status-msg"></div>
+    </div>
+  </div>
+
+  <!-- 라이트박스 -->
+  <div id="imageModal" class="modal-overlay lightbox">
+    <button class="modal-close-light" id="closeImageModalBtn">&times;</button>
+    <div class="lightbox-content">
+      <img id="modalImg" src="">
+      <div class="modal-photo-info">
+        <span id="modalAuthor"></span>
+        <span id="modalDate"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

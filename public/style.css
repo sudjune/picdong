@@ -1,0 +1,296 @@
+:root {
+  --primary: #000000;
+  --primary-hover: #333333;
+  --bg-color: #fcfcfc;
+  --surface: #ffffff;
+  --text-main: #111111;
+  --text-muted: #888888;
+  --border: #eaeaea;
+  --danger: #ff3b30;
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+}
+
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+}
+
+/* [모바일 기본값] 폰트 및 배경 설정 */
+body { 
+  font-family: 'Pretendard', sans-serif; 
+  background-color: var(--bg-color); 
+  color: var(--text-main); 
+  padding-top: 60px; /* 모바일 네비게이션 높이 */
+}
+
+/* -------------------------------------
+ * 1. 상단 네비게이션 (모바일 기준)
+ * ------------------------------------- */
+.navbar { 
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  right: 0; 
+  height: 60px; 
+  background: rgba(255,255,255,0.85); 
+  backdrop-filter: saturate(180%) blur(12px); 
+  border-bottom: 1px solid var(--border); 
+  z-index: 50; 
+}
+.nav-container { 
+  max-width: 1140px; 
+  height: 100%; 
+  margin: 0 auto; 
+  padding: 0 16px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+}
+.nav-brand { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.brand-icon { width: 24px; height: 24px; border-radius: 6px; }
+.logo { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
+
+.nav-actions { display: flex; align-items: center; gap: 8px; }
+.user-profile { display: flex; align-items: center; gap: 8px; }
+.user-badge { 
+  font-weight: 600; 
+  cursor: pointer; 
+  padding: 6px 10px; 
+  border-radius: 20px; 
+  background: #f0f0f0; 
+  transition: background 0.2s; 
+  font-size: 0.8rem;
+}
+
+/* 공통 버튼 (모바일 터치 최적화) */
+button { 
+  font-family: inherit; 
+  border: none; 
+  cursor: pointer; 
+  font-weight: 600; 
+  border-radius: var(--radius-sm); 
+  transition: 0.2s; 
+  white-space: nowrap; 
+}
+.btn-primary { background: var(--primary); color: #fff; padding: 8px 12px; font-size: 0.85rem; }
+.btn-secondary { background: #f0f0f0; color: #333; padding: 8px 12px; font-size: 0.85rem; }
+.btn-auth { background: #000; color: #fff; padding: 8px 12px; border-radius: 20px; font-size: 0.85rem; }
+.btn-text { background: none; color: var(--text-muted); font-size: 0.85rem; }
+
+/* -------------------------------------
+ * 2. 컨테이너 및 피드 영역 (모바일 1열 기준)
+ * ------------------------------------- */
+.container { max-width: 1140px; margin: 20px auto; padding: 0 16px; }
+.feed-section { margin-bottom: 32px; }
+.section-title { font-size: 1.25rem; font-weight: 800; margin-bottom: 16px; }
+.feed-header { display: flex; justify-content: space-between; align-items: baseline; }
+.photo-count { color: var(--text-muted); font-size: 0.85rem; }
+
+/* 모바일 갤러리: 한 줄에 사진 1개 꽉 차게 */
+.gallery-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+.best-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+
+/* 마이페이지: 모바일에선 썸네일로 2열 배치 */
+.mypage-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+.photo-card { 
+  background: var(--surface); 
+  border-radius: var(--radius-md); 
+  overflow: hidden; 
+  border: 1px solid var(--border); 
+}
+.card-img-wrap { 
+  width: 100%; 
+  aspect-ratio: 4 / 3; 
+  height: auto; 
+  cursor: pointer; 
+  background: #000; 
+  position: relative; 
+}
+.card-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.badge-hot { 
+  position: absolute; 
+  top: 12px; 
+  left: 12px; 
+  background: rgba(255,59,48,0.95); 
+  color: #fff; 
+  font-size: 0.75rem; 
+  padding: 4px 10px; 
+  border-radius: 12px; 
+  font-weight: 700; 
+}
+
+/* -------------------------------------
+ * 3. 카드 하단 액션 (터치 친화적 패딩)
+ * ------------------------------------- */
+.card-meta { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; }
+.meta-top { display: flex; justify-content: space-between; align-items: center; }
+.meta-author { font-size: 0.95rem; font-weight: 800; color: #111; }
+.meta-date { font-size: 0.8rem; color: #888; }
+
+.action-group { display: flex; gap: 8px; width: 100%; }
+.icon-btn { 
+  flex: 1; 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  background: #f5f5f5; 
+  padding: 12px; /* 터치하기 편하게 높이 확장 */
+  border-radius: var(--radius-sm); 
+  font-size: 0.9rem; 
+  font-weight: 600; 
+  gap: 6px; 
+}
+.icon-btn.liked { background: #fff0f0; color: #ff3b30; }
+.icon-btn.bookmarked { background: #f0f8ff; color: #007aff; }
+
+.btn-delete-post { 
+  width: 100%; 
+  background: #fff0f0; 
+  color: #ff3b30; 
+  border: 1px solid #ffebeb; 
+  padding: 12px; 
+  border-radius: var(--radius-sm); 
+  font-size: 0.9rem; 
+  font-weight: 700; 
+}
+
+/* -------------------------------------
+ * 4. 모달 (화면 꽉 차게)
+ * ------------------------------------- */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; padding: 16px; }
+.auth-card, .modal-card { 
+  background: #fff; 
+  width: 100%; 
+  max-width: 420px; 
+  border-radius: var(--radius-lg); 
+  padding: 32px 24px; 
+  position: relative; 
+  max-height: 90vh; 
+  overflow-y: auto; 
+}
+.auth-header { display: flex; gap: 16px; margin-bottom: 24px; border-bottom: 2px solid #f0f0f0; }
+.auth-tab { background: none; font-size: 1.1rem; font-weight: 700; color: #bbb; padding-bottom: 12px; }
+.auth-tab.active { color: #000; border-bottom: 2px solid #000; }
+.auth-input { width: 100%; padding: 14px; background: #f8f8f8; border: 1px solid transparent; border-radius: var(--radius-sm); font-size: 1rem; margin-bottom: 8px; }
+.auth-submit { width: 100%; padding: 14px; font-size: 1.05rem; margin-top: 12px; }
+.error-text { color: var(--danger); font-size: 0.8rem; margin: -4px 0 12px 4px; display: block; min-height: 16px; }
+.modal-close { position: absolute; top: 20px; right: 20px; background: none; font-size: 1.5rem; color: #999; }
+
+/* -------------------------------------
+ * 5. 업로드 드롭존
+ * ------------------------------------- */
+.upload-dropzone-box { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+.upload-dropzone-box input[type="file"] { display: none !important; }
+.upload-dropzone { padding: 40px 20px; border: 2px dashed #ddd; border-radius: var(--radius-md); text-align: center; background: #fafafa; cursor: pointer; }
+.drop-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.preview-container { text-align: center; }
+.preview-wrapper { position: relative; width: 140px; height: 140px; margin: 0 auto; border-radius: var(--radius-sm); overflow: hidden; }
+.preview-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+.remove-btn { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.6); color: #fff; border-radius: 50%; width: 26px; height: 26px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+
+/* -------------------------------------
+ * 6. 마이페이지 (모바일 수직 정렬 & 스크롤 탭)
+ * ------------------------------------- */
+.mypage-header { 
+  background: #fff; 
+  padding: 24px; 
+  border-radius: var(--radius-lg); 
+  border: 1px solid var(--border); 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  text-align: center; 
+  gap: 16px; 
+  margin-bottom: 24px; 
+}
+.my-avatar { font-size: 3.5rem; background: #f0f0f0; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.my-details h3 { font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+
+.mypage-tabs { 
+  display: flex; 
+  gap: 12px; 
+  margin-bottom: 24px; 
+  border-bottom: 1px solid var(--border); 
+  overflow-x: auto; /* 화면 넘어가면 가로 스와이프 */
+  white-space: nowrap; 
+  padding-bottom: 4px; 
+}
+.mypage-tabs::-webkit-scrollbar { display: none; } /* 스크롤바 숨기기 */
+.my-tab { font-size: 1rem; color: var(--text-muted); padding: 10px 16px; }
+.my-tab.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
+
+/* -------------------------------------
+ * 7. 라이트박스 (크게 보기 모바일 최적화)
+ * ------------------------------------- */
+.lightbox { background: rgba(0,0,0,0.95); }
+.lightbox-content { text-align: center; width: 100%; }
+.lightbox-content img { max-width: 100%; max-height: 75vh; border-radius: 8px; object-fit: contain; }
+.modal-photo-info { color: #fff; margin-top: 16px; font-size: 0.95rem; display: flex; flex-direction: column; gap: 8px; }
+.modal-close-light { position: absolute; top: 20px; right: 20px; color: #fff; font-size: 2.5rem; }
+
+
+/* -------------------------------------
+ * 8. 데스크탑 (PC / 태블릿) 확장 설정
+ * ------------------------------------- */
+@media (min-width: 768px) {
+  body { padding-top: 70px; }
+  .navbar { height: 64px; }
+  .nav-container { padding: 0 20px; }
+  .brand-icon { width: 28px; height: 28px; }
+  .logo { font-size: 1.4rem; }
+  
+  .nav-actions { gap: 12px; }
+  .user-profile { gap: 12px; }
+  .user-badge { padding: 6px 12px; font-size: 0.9rem; }
+  .btn-primary, .btn-secondary { padding: 10px 18px; font-size: 0.9rem; }
+  .btn-auth { padding: 8px 16px; font-size: 0.9rem; }
+  
+  .container { margin: 32px auto; padding: 0 20px; }
+  .section-title { font-size: 1.4rem; }
+  
+  /* PC에서는 여러 열(그리드)로 자동 배치 */
+  .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+  .best-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+  .mypage-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  
+  .card-meta { padding: 16px 18px; }
+  .auth-card, .modal-card { padding: 40px 32px; }
+  
+  /* PC 마이페이지: 가로 배치 */
+  .mypage-header { flex-direction: row; text-align: left; padding: 40px; gap: 24px; }
+  .my-avatar { width: 90px; height: 90px; font-size: 4rem; }
+  .mypage-tabs { gap: 16px; overflow-x: visible; }
+  .my-tab { font-size: 1.1rem; padding: 12px 20px; }
+  
+  .lightbox-content img { max-width: 90vw; max-height: 85vh; }
+  .modal-photo-info { flex-direction: row; justify-content: center; gap: 20px; }
+  .modal-close-light { top: 30px; right: 40px; font-size: 3rem; }
+}
+/* PC 화면에서도 마이페이지 글씨를 프로필 위로 (세로 배치) */
+@media (min-width: 768px) {
+  .mypage-header { 
+    flex-direction: column !important; 
+    align-items: center !important; 
+    text-align: center !important; 
+    gap: 20px !important;
+  }
+}
+/* 마이페이지 왼쪽 정렬 및 프로필 가로 배치 */
+.mypage-header { 
+  flex-direction: column !important; 
+  align-items: flex-start !important; /* 전체 요소를 왼쪽으로 밀기 */
+  text-align: left !important; /* 글씨 왼쪽 정렬 */
+  gap: 20px !important;
+}
+
+/* 아바타와 닉네임 정보를 가로로 예쁘게 정렬 */
+.my-info-card {
+  display: flex !important;
+  align-items: center !important;
+  gap: 20px !important;
+}
